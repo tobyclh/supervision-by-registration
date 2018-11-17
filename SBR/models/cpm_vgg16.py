@@ -104,13 +104,15 @@ class VGG16_base(nn.Module):
 model_urls = 'https://download.pytorch.org/models/vgg16-397923af.pth'
 
 def cpm_vgg16(config, pts):
+  import logging as log
+  logger = log.getLogger('SBR')
   
-  print ('Initialize cpm-vgg16 with configure : {}'.format(config))
+  logger.info ('Initialize cpm-vgg16 with configure : {}'.format(config))
   model = VGG16_base(config, pts)
   model.apply(weights_init_cpm)
 
   if config.pretrained:
-    print ('vgg16_base use pre-trained model')
+    logger.info ('vgg16_base use pre-trained model')
     weights = model_zoo.load_url(model_urls)
     model.load_state_dict(weights, strict=False)
   return model

@@ -17,11 +17,12 @@ from .dataset_utils import anno_parser
 from .point_meta import Point_Meta
 import torch
 import torch.utils.data as data
+import logging as log
 
 class GeneralDataset(data.Dataset):
 
   def __init__(self, transform, sigma, downsample, heatmap_type, data_indicator):
-
+    self.logger = log.getLogger('SBR')
     self.transform = transform
     self.sigma = sigma
     self.downsample = downsample
@@ -29,7 +30,7 @@ class GeneralDataset(data.Dataset):
     self.dataset_name = data_indicator
 
     self.reset()
-    print ('The general dataset initialization done : {:}'.format(self))
+    self.logger.info('The general dataset initialization done : {:}'.format(self))
 
   def __repr__(self):
     return ('{name}(point-num={NUM_PTS}, sigma={sigma}, heatmap_type={heatmap_type}, length={length}, dataset={dataset_name})'.format(name=self.__class__.__name__, **self.__dict__))
@@ -66,7 +67,11 @@ class GeneralDataset(data.Dataset):
 
   def prepare_input(self, image, box):
     meta = Point_Meta(self.NUM_PTS, None, np.array(box), image, self.dataset_name)
-    image = pil_loader( image )
+    if isinstance(image, str):
+      image = pil_loader( image )
+    else:
+      from PIL import Image
+      image = Image.fromarray(image.astype(np.uint8))
     return self._process_(image, meta, -1), meta
 
   def load_data(self, datas, labels, boxes, face_sizes, num_pts, reset):
@@ -79,7 +84,7 @@ class GeneralDataset(data.Dataset):
     if reset: self.reset(num_pts)
     else:     assert self.NUM_PTS == num_pts, 'The number of point is inconsistance : {} vs {}'.format(self.NUM_PTS, num_pts)
 
-    print ('[GeneralDataset] load-data {:} datas begin'.format(len(datas)))
+    self.logger.info('[GeneralDataset] load-data {:} datas begin'.format(len(datas)))
 
     for idx, data in enumerate(datas):
       assert isinstance(data, str), 'The type of data is not correct : {}'.format(data)
@@ -89,11 +94,11 @@ class GeneralDataset(data.Dataset):
     assert len(self.datas) == self.length, 'The length and the data is not right {} vs {}'.format(self.length, len(self.datas))
     assert len(self.labels) == self.length, 'The length and the labels is not right {} vs {}'.format(self.length, len(self.labels))
     assert len(self.face_sizes) == self.length, 'The length and the face_sizes is not right {} vs {}'.format(self.length, len(self.face_sizes))
-    print ('Load data done for the general dataset, which has {} images.'.format(self.length))
+    self.logger.info ('Load data done for the general dataset, which has {} images.'.format(self.length))
 
   def load_list(self, file_lists, num_pts, reset):
     lists = load_file_lists(file_lists)
-    print ('GeneralDataset : load-list : load {:} lines'.format(len(lists)))
+    self.logger.info ('GeneralDataset : load-list : load {:} lines'.format(len(lists)))
 
     datas, labels, boxes, face_sizes = [], [], [], []
 
