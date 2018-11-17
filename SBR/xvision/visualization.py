@@ -8,11 +8,11 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 import numpy as np
-import datasets
+from ..datasets import pil_loader
 
 def draw_image_by_points(_image, pts, radius, color, crop, resize):
   if isinstance(_image, str):
-    _image = datasets.pil_loader(_image)
+    _image = pil_loader(_image)
   assert isinstance(_image, Image.Image), 'image type is not PIL.Image.Image'
   assert isinstance(pts, np.ndarray) and (pts.shape[0] == 2 or pts.shape[0] == 3), 'input points are not correct'
   image, pts = _image.copy(), pts.copy()

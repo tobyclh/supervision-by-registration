@@ -8,10 +8,10 @@ import os, time
 import numpy as np
 import torch
 import json
-from log_utils import print_log
+from ..log_utils import print_log
 from collections import OrderedDict
 from scipy import interpolate
-from mpl_toolkits.mplot3d import Axes3D
+from ..mpl_toolkits.mplot3d import Axes3D
 from .common_eval import evaluate_normalized_mean_error
 
 class Eval_Meta():

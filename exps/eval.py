@@ -12,13 +12,10 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 from copy import deepcopy
 from pathlib import Path
 import numbers, numpy as np
-lib_dir = (Path(__file__).parent / '..' / 'lib').resolve()
-if str(lib_dir) not in sys.path: sys.path.insert(0, str(lib_dir))
-assert sys.version_info.major == 3, 'Please upgrade from {:} to Python 3.x'.format(sys.version_info)
-from datasets import GeneralDataset as Dataset
-from xvision import transforms, draw_image_by_points
-from models import obtain_model, remove_module_dict
-from config_utils import load_configure
+from SBR.datasets import GeneralDataset as Dataset
+from SBR.xvision import transforms, draw_image_by_points
+from SBR.models import obtain_model, remove_module_dict
+from SBR.config_utils import load_configure
 
 def evaluate(args):
   assert torch.cuda.is_available(), 'CUDA is not available.'

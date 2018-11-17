@@ -10,34 +10,29 @@ from os import path as osp
 import numpy as np
 import math
 
-from pts_utils import generate_label_map
+from ..pts_utils import generate_label_map
 from .file_utils import load_file_lists
 from .dataset_utils import pil_loader
 from .dataset_utils import anno_parser
 from .point_meta import Point_Meta
-from .parse_utils import parse_video_by_indicator
 import torch
 import torch.utils.data as data
 
-class VideoDataset(data.Dataset):
+class GeneralDataset(data.Dataset):
 
-  def __init__(self, transform, sigma, downsample, heatmap_type, data_indicator, video_parser):
+  def __init__(self, transform, sigma, downsample, heatmap_type, data_indicator):
 
     self.transform = transform
     self.sigma = sigma
     self.downsample = downsample
     self.heatmap_type = heatmap_type
     self.dataset_name = data_indicator
-    self.video_parser = video_parser
-    L, R = parse_video_by_indicator(None, self.video_parser, True)
-    self.video_length = L + R + 1
-    self.center_idx = L
 
     self.reset()
     print ('The general dataset initialization done : {:}'.format(self))
 
   def __repr__(self):
-    return ('{name}(point-num={NUM_PTS}, sigma={sigma}, heatmap_type={heatmap_type}, length={length}, dataset={dataset_name}, parser={video_parser})'.format(name=self.__class__.__name__, **self.__dict__))
+    return ('{name}(point-num={NUM_PTS}, sigma={sigma}, heatmap_type={heatmap_type}, length={length}, dataset={dataset_name})'.format(name=self.__class__.__name__, **self.__dict__))
 
   def reset(self, num_pts=-1):
     self.length = 0
@@ -68,6 +63,11 @@ class VideoDataset(data.Dataset):
     self.labels.append( meta )
     self.face_sizes.append( face_size )
     self.length = self.length + 1
+
+  def prepare_input(self, image, box):
+    meta = Point_Meta(self.NUM_PTS, None, np.array(box), image, self.dataset_name)
+    image = pil_loader( image )
+    return self._process_(image, meta, -1), meta
 
   def load_data(self, datas, labels, boxes, face_sizes, num_pts, reset):
     # each data is a png file name
@@ -116,14 +116,15 @@ class VideoDataset(data.Dataset):
 
   def __getitem__(self, index):
     assert index >= 0 and index < self.length, 'Invalid index : {:}'.format(index)
-    images, is_video_or_not = parse_video_by_indicator(self.datas[index], self.video_parser, False)
-    images = [pil_loader(image) for image in images]
-
+    image = pil_loader( self.datas[index] )
     target = self.labels[index].copy()
+    return self._process_(image, target, index)
+
+  def _process_(self, image, target, index):
 
     # transform the image and points
     if self.transform is not None:
-      images, target = self.transform(images, target)
+      image, target = self.transform(image, target)
 
     # obtain the visiable indicator vector
     if target.is_none(): nopoints = True
@@ -133,12 +134,12 @@ class VideoDataset(data.Dataset):
     temp_save_wh = target.temp_save_wh
     ori_size = torch.IntTensor( [temp_save_wh[1], temp_save_wh[0], temp_save_wh[2], temp_save_wh[3]] ) # H, W, Cropped_[x1,y1]
         
-    if isinstance(images[0], Image.Image):
-      height, width = images[0].size[1], images[0].size[0]
-    elif isinstance(images[0], torch.FloatTensor):
-      height, width = images[0].size(1),  images[0].size(2)
+    if isinstance(image, Image.Image):
+      height, width = image.size[1], image.size[0]
+    elif isinstance(image, torch.FloatTensor):
+      height, width = image.size(1),  image.size(2)
     else:
-      raise Exception('Unknown type of image : {}'.format( type(images[0]) ))
+      raise Exception('Unknown type of image : {}'.format( type(image) ))
 
     if target.is_none() == False:
       target.apply_bound(width, height)
@@ -156,6 +157,5 @@ class VideoDataset(data.Dataset):
   
     torch_index = torch.IntTensor([index])
     torch_nopoints = torch.ByteTensor( [ nopoints ] )
-    video_indicator = torch.ByteTensor( [is_video_or_not] )
 
-    return torch.stack(images), heatmaps, mask, points, torch_index, torch_nopoints, video_indicator, ori_size
+    return image, heatmaps, mask, points, torch_index, torch_nopoints, ori_size

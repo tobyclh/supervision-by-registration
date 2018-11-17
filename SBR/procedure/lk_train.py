@@ -9,7 +9,7 @@ import torch
 import numbers, warnings
 from copy import deepcopy
 from pathlib import Path
-from log_utils import AverageMeter, time_for_file, convert_secs2time
+from ..log_utils import AverageMeter, time_for_file, convert_secs2time
 from .losses import compute_stage_loss, show_stage_loss
 from .lk_loss import lk_target_loss
 

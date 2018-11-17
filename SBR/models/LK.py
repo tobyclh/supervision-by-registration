@@ -6,7 +6,7 @@
 #
 import torch, copy
 import torch.nn as nn
-import lk
+from ..lk import lk_forward_backward_batch
 
 class LK(nn.Module):
   def __init__(self, model, lkconfig, points):
@@ -27,7 +27,7 @@ class LK(nn.Module):
 
     for ibatch in range(batch_size):
       feature_old = inputs[ibatch]
-      nextPts, fbackPts, backPts = lk.lk_forward_backward_batch(inputs[ibatch], batch_locs[ibatch], self.config.window, self.config.steps)
+      nextPts, fbackPts, backPts = lk_forward_backward_batch(inputs[ibatch], batch_locs[ibatch], self.config.window, self.config.steps)
 
       batch_next.append(nextPts)
       batch_fback.append(fbackPts)

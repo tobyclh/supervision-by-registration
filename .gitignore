@@ -12,3 +12,5 @@ cache_data/lists
 */*/*.swp
 */AFLWinfo_release.mat
 AFLWinfo_release.mat
+build/*
+dist/*
